@@ -277,17 +277,17 @@ void LBM_Domain::voxelize_mesh_on_device(const Mesh* mesh, const uchar flag, con
 	Memory<float3> p1(device, mesh->triangle_number, 1u, mesh->p1);
 	Memory<float3> p2(device, mesh->triangle_number, 1u, mesh->p2);
 	Memory<float> bounding_box_and_velocity(device, 16u);
-	const float x0=mesh->pmin.x-2.0f, y0=mesh->pmin.y-2.0f, z0=mesh->pmin.z-2.0f, x1=mesh->pmax.x+2.0f, y1=mesh->pmax.y+2.0f, z1=mesh->pmax.z+2.0f; // use bounding box of mesh to speed up voxelization; add tolerance of 2 cells for re-voxelization of moving objects
-	bounding_box_and_velocity[ 0] = as_float(mesh->triangle_number);
-	bounding_box_and_velocity[ 1] = x0;
-	bounding_box_and_velocity[ 2] = y0;
-	bounding_box_and_velocity[ 3] = z0;
-	bounding_box_and_velocity[ 4] = x1;
-	bounding_box_and_velocity[ 5] = y1;
-	bounding_box_and_velocity[ 6] = z1;
-	bounding_box_and_velocity[ 7] = rotation_center.x;
-	bounding_box_and_velocity[ 8] = rotation_center.y;
-	bounding_box_and_velocity[ 9] = rotation_center.z;
+	const float x0 = mesh->pmin.x - 2.0f, y0 = mesh->pmin.y - 2.0f, z0 = mesh->pmin.z - 2.0f, x1 = mesh->pmax.x + 2.0f, y1 = mesh->pmax.y + 2.0f, z1 = mesh->pmax.z + 2.0f; // use bounding box of mesh to speed up voxelization; add tolerance of 2 cells for re-voxelization of moving objects
+	bounding_box_and_velocity[0] = as_float(mesh->triangle_number);
+	bounding_box_and_velocity[1] = x0;
+	bounding_box_and_velocity[2] = y0;
+	bounding_box_and_velocity[3] = z0;
+	bounding_box_and_velocity[4] = x1;
+	bounding_box_and_velocity[5] = y1;
+	bounding_box_and_velocity[6] = z1;
+	bounding_box_and_velocity[7] = rotation_center.x;
+	bounding_box_and_velocity[8] = rotation_center.y;
+	bounding_box_and_velocity[9] = rotation_center.z;
 	bounding_box_and_velocity[10] = linear_velocity.x;
 	bounding_box_and_velocity[11] = linear_velocity.y;
 	bounding_box_and_velocity[12] = linear_velocity.z;
@@ -295,27 +295,28 @@ void LBM_Domain::voxelize_mesh_on_device(const Mesh* mesh, const uchar flag, con
 	bounding_box_and_velocity[14] = rotational_velocity.y;
 	bounding_box_and_velocity[15] = rotational_velocity.z;
 	uint direction = 0u;
-	if(length(rotational_velocity)==0.0f) { // choose direction of minimum bounding-box cross-section area
-		float v[3] = { (y1-y0)*(z1-z0), (z1-z0)*(x1-x0), (x1-x0)*(y1-y0) };
+	if (length(rotational_velocity) == 0.0f) { // choose direction of minimum bounding-box cross-section area
+		float v[3] = { (y1 - y0) * (z1 - z0), (z1 - z0) * (x1 - x0), (x1 - x0) * (y1 - y0) };
 		float vmin = v[0];
-		for(uint i=1u; i<3u; i++) {
-			if(v[i]<vmin) {
+		for (uint i = 1u; i < 3u; i++) {
+			if (v[i] < vmin) {
 				vmin = v[i];
 				direction = i;
 			}
 		}
-	} else { // choose direction closest to rotation axis
+	}
+	else { // choose direction closest to rotation axis
 		float v[3] = { fabsf(rotational_velocity.x), fabsf(rotational_velocity.y), fabsf(rotational_velocity.z) };
 		float vmax = v[0];
-		for(uint i=1u; i<3u; i++) {
-			if(v[i]>vmax) {
+		for (uint i = 1u; i < 3u; i++) {
+			if (v[i] > vmax) {
 				vmax = v[i];
 				direction = i; // find direction of minimum bounding-box cross-section area
 			}
 		}
 	}
-	const ulong A[3] = { (ulong)Ny*(ulong)Nz, (ulong)Nz*(ulong)Nx, (ulong)Nx*(ulong)Ny };
-	Kernel kernel_voxelize_mesh(device, A[direction], "voxelize_mesh", direction, fi, u, flags, t+1ull, flag, p0, p1, p2, bounding_box_and_velocity);
+	const ulong A[3] = { (ulong)Ny * (ulong)Nz, (ulong)Nz * (ulong)Nx, (ulong)Nx * (ulong)Ny };
+	Kernel kernel_voxelize_mesh(device, A[direction], "voxelize_mesh", direction, fi, u, flags, t + 1ull, flag, p0, p1, p2, bounding_box_and_velocity);
 #ifdef SURFACE
 	kernel_voxelize_mesh.add_parameters(mass, massex);
 #endif // SURFACE
