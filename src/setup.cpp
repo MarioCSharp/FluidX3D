@@ -8,7 +8,7 @@ void main_setup() {
     const uint3 lbm_N = resolution(float3(1.0f, 2.0f, 0.5f), 2000u);
     const float lbm_Re = 1000000.0f;
     const float lbm_u = 0.075f;
-    const ulong lbm_T = 3000ull;
+    const ulong lbm_T = 1000ull;
 
     LBM lbm(lbm_N, units.nu_from_Re(lbm_Re, (float)lbm_N.x, lbm_u));
 
