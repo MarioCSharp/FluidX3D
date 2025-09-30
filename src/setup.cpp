@@ -5,7 +5,7 @@ void main_setup() {
     std::ofstream csv("results.csv");
     csv << "t,Fx,Fy,Fz,Tx,Ty,Tz\n";
 
-    const uint3 lbm_N = resolution(float3(1.0f, 2.0f, 0.5f), 1880u);
+    const uint3 lbm_N = resolution(float3(1.0f, 2.0f, 0.5f), 2000u);
     const float lbm_Re = 1000000.0f;
     const float lbm_u = 0.075f;
     const ulong lbm_T = 3000ull;
@@ -16,7 +16,7 @@ void main_setup() {
     const float3 center = float3(lbm.center().x, 0.55f * size, lbm.center().z);
     const float3x3 rotation = float3x3(float3(1, 0, 0), radians(0.0f));
 
-    lbm.voxelize_stl(get_exe_path() + "../stl/car_step_400_model_680282.stl", center, rotation, size);
+    lbm.voxelize_stl(get_exe_path() + "stl/car_step_model.stl", center, rotation, size);
 
     const uint Nx = lbm.get_Nx(), Ny = lbm.get_Ny(), Nz = lbm.get_Nz();
 
@@ -32,37 +32,34 @@ void main_setup() {
         }
         });
 
-    lbm.graphics.visualization_modes = VIS_FLAG_SURFACE | VIS_Q_CRITERION;
-
     lbm.run(0u, lbm_T);
     while (lbm.get_t() < lbm_T) {
-        //const float3 lbm_force = lbm.object_force(TYPE_S);
-        //const float3 lbm_torque = lbm.object_torque(lbm.center(), TYPE_S);
+        const float3 lbm_force = lbm.object_force(TYPE_S);
+        const float3 lbm_torque = lbm.object_torque(lbm.center(), TYPE_S);
 
-        //const float si_force_x = units.si_F(lbm_force.x);   // Drag
-        //const float si_force_y = units.si_F(lbm_force.y);   // Lift
-        //const float si_force_z = units.si_F(lbm_force.z);   // Side force
-        //const float si_torque_x = units.si_T(lbm_torque.x);
-        //const float si_torque_y = units.si_T(lbm_torque.y);
-        //const float si_torque_z = units.si_T(lbm_torque.z);
+        const float si_force_x = units.si_F(lbm_force.x);   // Drag
+        const float si_force_y = units.si_F(lbm_force.y);   // Lift
+        const float si_force_z = units.si_F(lbm_force.z);   // Side force
+        const float si_torque_x = units.si_T(lbm_torque.x);
+        const float si_torque_y = units.si_T(lbm_torque.y);
+        const float si_torque_z = units.si_T(lbm_torque.z);
 
-        //csv << lbm.get_t() << ","
-        //    << si_force_x << ","
-        //    << si_force_y << ","
-        //    << si_force_z << ","
-        //    << si_torque_x << ","
-        //    << si_torque_y << ","
-        //    << si_torque_z << "\n";
+        csv << lbm.get_t() << ","
+            << si_force_x << ","
+            << si_force_y << ","
+            << si_force_z << ","
+            << si_torque_x << ","
+            << si_torque_y << ","
+            << si_torque_z << "\n";
 
-        //std::cout << "t=" << lbm.get_t()
-        //    << " | Fx=" << si_force_x
-        //    << " Fy=" << si_force_y
-        //    << " Fz=" << si_force_z
-        //    << " | Tx=" << si_torque_x
-        //    << " Ty=" << si_torque_y
-        //    << " Tz=" << si_torque_z
-        //    << std::endl;
-        if (lbm.graphics.next_frame(lbm_T, 10.0f)) lbm.graphics.write_frame();
+        std::cout << "t=" << lbm.get_t()
+            << " | Fx=" << si_force_x
+            << " Fy=" << si_force_y
+            << " Fz=" << si_force_z
+            << " | Tx=" << si_torque_x
+            << " Ty=" << si_torque_y
+            << " Tz=" << si_torque_z
+            << std::endl;
 
         lbm.run(1u, lbm_T);
     }
