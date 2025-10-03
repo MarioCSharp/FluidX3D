@@ -3,21 +3,21 @@
 
 void main_setup() {
     std::ofstream csv("results.csv");
-    csv << "t,Fx,Fy,Fz,Tx,Ty,Tz\n";
+    csv << "t,drag,downforce\n";
 
-    const uint3 lbm_N = resolution(float3(1.0f, 2.0f, 0.5f), 1280u);
-    const float lbm_Re = 1000000.0f;
-    const float lbm_u = 0.075f;
-    const ulong lbm_T = 10000ull;
+    const uint3 lbm_N = resolution(float3(1.0f, 2.0f, 0.5f), 4000u);
+    const float lbm_Re = 10000.0f;
+    const float lbm_u = 0.06f;
+    const ulong lbm_T = 2500ull;
 
     LBM lbm(lbm_N, units.nu_from_Re(lbm_Re, (float)lbm_N.x, lbm_u));
-    units.set_m_kg_s(1.0f, 1.0f, 1.0f);   
+    units.set_m_kg_s(1.0f, 1.0f, 1.0f);
 
     const float size = 1.0f * lbm.size().x;
     const float3 center = float3(lbm.center().x, 0.55f * size, lbm.center().z);
     const float3x3 rotation = float3x3(float3(1, 0, 0), radians(0.0f));
 
-    lbm.voxelize_stl(get_exe_path() + "../stl/car_step_model.stl", center, rotation, size, TYPE_S | TYPE_X);
+    lbm.voxelize_stl(get_exe_path() + "../stl/car_model.stl", center, rotation, size, TYPE_S | TYPE_X);
 
     const float3 lbm_com = lbm.object_center_of_mass(TYPE_S | TYPE_X);
 
@@ -40,22 +40,20 @@ void main_setup() {
             lbm.flags[n] = TYPE_E;
         });
 
-
     lbm.run(0u, lbm_T);
     while (lbm.get_t() < lbm_T) {
 
         const float3 lbm_force = lbm.object_force(TYPE_S | TYPE_X);
         const float3 lbm_torque = lbm.object_torque(lbm_com, TYPE_S | TYPE_X);
 
-        const float Fx = units.si_F(lbm_force.x);
-        const float Fy = units.si_F(lbm_force.y);
+        const float Fx = units.si_F(lbm_force.x); // DOWNFORCE
+        const float Fy = units.si_F(lbm_force.y); // DRAG
         const float Fz = units.si_F(lbm_force.z);
         const float Tx = units.si_T(lbm_torque.x);
         const float Ty = units.si_T(lbm_torque.y);
         const float Tz = units.si_T(lbm_torque.z);
 
-        csv << lbm.get_t() << "," << Fx << "," << Fy << "," << Fz << ","
-            << Tx << "," << Ty << "," << Tz << "\n";
+        csv << lbm.get_t() << "," << Fy << "," << Fx << "\n";
 
         std::cout << "t=" << lbm.get_t()
             << " | Fx=" << Fx << " Fy=" << Fy << " Fz=" << Fz
@@ -67,6 +65,7 @@ void main_setup() {
 
     csv.close();
 }
+
 
 //
 //void main_setup() { 
