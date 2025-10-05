@@ -17,7 +17,7 @@ void main_setup() {
     const float3 center = float3(lbm.center().x, 0.55f * size, lbm.center().z);
     const float3x3 rotation = float3x3(float3(1, 0, 0), radians(0.0f));
 
-    lbm.voxelize_stl(get_exe_path() + "../stl/car_model.stl", center, rotation, size, TYPE_S | TYPE_X);
+    lbm.voxelize_stl(get_exe_path() + "stl/car_step_model.stl", center, rotation, size, TYPE_S | TYPE_X);
 
     const float3 lbm_com = lbm.object_center_of_mass(TYPE_S | TYPE_X);
 
