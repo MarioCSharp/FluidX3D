@@ -5,7 +5,7 @@ void main_setup() {
     std::ofstream csv("results.csv");
     csv << "t,drag,downforce\n";
 
-    const uint3 lbm_N = resolution(float3(1.0f, 2.0f, 0.5f), 4000u);
+    const uint3 lbm_N = resolution(float3(1.0f, 2.0f, 0.5f), 2000u);
     const float lbm_Re = 10000.0f;
     const float lbm_u = 0.06f;
     const ulong lbm_T = 2500ull;
@@ -42,7 +42,6 @@ void main_setup() {
 
     lbm.run(0u, lbm_T);
     while (lbm.get_t() < lbm_T) {
-
         const float3 lbm_force = lbm.object_force(TYPE_S | TYPE_X);
         const float3 lbm_torque = lbm.object_torque(lbm_com, TYPE_S | TYPE_X);
 
