@@ -2718,6 +2718,30 @@ inline string to_string(uint x) {
 inline string to_string(int x) {
 	return x>=0 ? to_string((uint)x) : "-"+to_string((uint)(-x));
 }
+inline string to_string_hex(ulong x) {
+	string r = "";
+	for(uint i=0u; i<16u; i++) {
+		const uint hex_char = (uint)(x&0xFull);
+		r = (char)(hex_char+(hex_char<10u ? 48u : 55u))+r;
+		x >>= 4u;
+	}
+	return "0x"+r;
+}
+inline string to_string_hex(slong x) {
+	return to_string_hex(*(ulong*)&x);
+}
+inline string to_string_hex(uint x) {
+	string r = "";
+	for(uint i=0u; i<8u; i++) {
+		const uint hex_char = x&0xFu;
+		r = (char)(hex_char+(hex_char<10u ? 48u : 55u))+r;
+		x >>= 4u;
+	}
+	return "0x"+r;
+}
+inline string to_string_hex(int x) {
+	return to_string_hex(*(uint*)&x);
+}
 inline string to_string(float x) { // convert float to string with full precision (<string> to_string() prints only 6 decimals)
 	string s = "";
 	if(x<0.0f) { s += "-"; x = -x; }
@@ -4475,6 +4499,17 @@ struct Mesh { // triangle mesh
 	}
 	inline const float3& get_center() const {
 		return center;
+	}
+	inline const float3 get_center_of_mass() const { // volumetric center of mass
+		double V = 0.0;
+		double3 com(0.0, 0.0, 0.0);
+		for(uint i=0u; i<triangle_number; i++) {
+			const double dV = (double)dot(p0[i], cross(p1[i], p2[i]))/6.0f;
+			V += dV;
+			const float3 avg = 0.25f*(p0[i]+p1[i]+p2[i]);
+			com += dV*double3((double)avg.x, (double)avg.y, (double)avg.z);
+		}
+		return float3((float)(com.x/V), (float)(com.y/V), (float)(com.z/V));
 	}
 	inline const float3 get_bounding_box_size() const {
 		return pmax-pmin;

@@ -277,17 +277,17 @@ void LBM_Domain::voxelize_mesh_on_device(const Mesh* mesh, const uchar flag, con
 	Memory<float3> p1(device, mesh->triangle_number, 1u, mesh->p1);
 	Memory<float3> p2(device, mesh->triangle_number, 1u, mesh->p2);
 	Memory<float> bounding_box_and_velocity(device, 16u);
-	const float x0 = mesh->pmin.x - 2.0f, y0 = mesh->pmin.y - 2.0f, z0 = mesh->pmin.z - 2.0f, x1 = mesh->pmax.x + 2.0f, y1 = mesh->pmax.y + 2.0f, z1 = mesh->pmax.z + 2.0f; // use bounding box of mesh to speed up voxelization; add tolerance of 2 cells for re-voxelization of moving objects
-	bounding_box_and_velocity[0] = as_float(mesh->triangle_number);
-	bounding_box_and_velocity[1] = x0;
-	bounding_box_and_velocity[2] = y0;
-	bounding_box_and_velocity[3] = z0;
-	bounding_box_and_velocity[4] = x1;
-	bounding_box_and_velocity[5] = y1;
-	bounding_box_and_velocity[6] = z1;
-	bounding_box_and_velocity[7] = rotation_center.x;
-	bounding_box_and_velocity[8] = rotation_center.y;
-	bounding_box_and_velocity[9] = rotation_center.z;
+	const float x0=mesh->pmin.x-2.0f, y0=mesh->pmin.y-2.0f, z0=mesh->pmin.z-2.0f, x1=mesh->pmax.x+2.0f, y1=mesh->pmax.y+2.0f, z1=mesh->pmax.z+2.0f; // use bounding box of mesh to speed up voxelization; add tolerance of 2 cells for re-voxelization of moving objects
+	bounding_box_and_velocity[ 0] = as_float(mesh->triangle_number);
+	bounding_box_and_velocity[ 1] = x0;
+	bounding_box_and_velocity[ 2] = y0;
+	bounding_box_and_velocity[ 3] = z0;
+	bounding_box_and_velocity[ 4] = x1;
+	bounding_box_and_velocity[ 5] = y1;
+	bounding_box_and_velocity[ 6] = z1;
+	bounding_box_and_velocity[ 7] = rotation_center.x;
+	bounding_box_and_velocity[ 8] = rotation_center.y;
+	bounding_box_and_velocity[ 9] = rotation_center.z;
 	bounding_box_and_velocity[10] = linear_velocity.x;
 	bounding_box_and_velocity[11] = linear_velocity.y;
 	bounding_box_and_velocity[12] = linear_velocity.z;
@@ -295,28 +295,27 @@ void LBM_Domain::voxelize_mesh_on_device(const Mesh* mesh, const uchar flag, con
 	bounding_box_and_velocity[14] = rotational_velocity.y;
 	bounding_box_and_velocity[15] = rotational_velocity.z;
 	uint direction = 0u;
-	if (length(rotational_velocity) == 0.0f) { // choose direction of minimum bounding-box cross-section area
-		float v[3] = { (y1 - y0) * (z1 - z0), (z1 - z0) * (x1 - x0), (x1 - x0) * (y1 - y0) };
+	if(length(rotational_velocity)==0.0f) { // choose direction of minimum bounding-box cross-section area
+		float v[3] = { (y1-y0)*(z1-z0), (z1-z0)*(x1-x0), (x1-x0)*(y1-y0) };
 		float vmin = v[0];
-		for (uint i = 1u; i < 3u; i++) {
-			if (v[i] < vmin) {
+		for(uint i=1u; i<3u; i++) {
+			if(v[i]<vmin) {
 				vmin = v[i];
 				direction = i;
 			}
 		}
-	}
-	else { // choose direction closest to rotation axis
+	} else { // choose direction closest to rotation axis
 		float v[3] = { fabsf(rotational_velocity.x), fabsf(rotational_velocity.y), fabsf(rotational_velocity.z) };
 		float vmax = v[0];
-		for (uint i = 1u; i < 3u; i++) {
-			if (v[i] > vmax) {
+		for(uint i=1u; i<3u; i++) {
+			if(v[i]>vmax) {
 				vmax = v[i];
 				direction = i; // find direction of minimum bounding-box cross-section area
 			}
 		}
 	}
-	const ulong A[3] = { (ulong)Ny * (ulong)Nz, (ulong)Nz * (ulong)Nx, (ulong)Nx * (ulong)Ny };
-	Kernel kernel_voxelize_mesh(device, A[direction], "voxelize_mesh", direction, fi, u, flags, t + 1ull, flag, p0, p1, p2, bounding_box_and_velocity);
+	const ulong A[3] = { (ulong)Ny*(ulong)Nz, (ulong)Nz*(ulong)Nx, (ulong)Nx*(ulong)Ny };
+	Kernel kernel_voxelize_mesh(device, A[direction], "voxelize_mesh", direction, fi, u, flags, t+1ull, flag, p0, p1, p2, bounding_box_and_velocity);
 #ifdef SURFACE
 	kernel_voxelize_mesh.add_parameters(mass, massex);
 #endif // SURFACE
@@ -338,6 +337,10 @@ string LBM_Domain::device_defines() const { return
 	"\n	#define def_Nz "+to_string(Nz)+"u"
 	"\n	#define def_N "+to_string(get_N())+"ul"
 	"\n	#define uxx "+(get_N()<=(ulong)max_uint ? "uint" : "ulong")+"" // switchable data type for index calculation (32-bit uint / 64-bit ulong)
+
+	"\n	#define def_GNx "+to_string((Nx-2u*(uint)(Dx>1u))*Dx)+"u" // global LBM grid resolution of all domains together
+	"\n	#define def_GNy "+to_string((Ny-2u*(uint)(Dy>1u))*Dy)+"u"
+	"\n	#define def_GNz "+to_string((Nz-2u*(uint)(Dz>1u))*Dz)+"u"
 
 	"\n	#define def_Dx "+to_string(Dx)+"u"
 	"\n	#define def_Dy "+to_string(Dy)+"u"
@@ -790,7 +793,6 @@ void LBM::sanity_checks_constructor(const vector<Device_Info>& device_infos, con
 #endif // TEMPERATURE
 #ifdef PARTICLES
 	if(particles_N==0u) print_error("The PARTICLES extension is enabled but the number of particles is set to 0. Comment out \"#define PARTICLES\" in defines.hpp.");
-	if(get_D()>1u) print_error("The PARTICLES extension is not supported in multi-GPU mode.");
 #if !defined(VOLUME_FORCE)||!defined(FORCE_FIELD)
 	if(particles_rho!=1.0f) print_error("Particle density is set unequal to 1, but particle-fluid 2-way-coupling is not enabled. Uncomment both \"#define VOLUME_FORCE\" and \"#define FORCE_FIELD\" in defines.hpp.");
 #endif // !VOLUME_FORCE||!FORCE_FIELD
@@ -853,6 +855,7 @@ void LBM::initialize() { // write all data fields to device and call kernel_init
 	for(uint d=0u; d<get_D(); d++) lbm_domain[d]->flags.enqueue_write_to_device();
 #ifdef FORCE_FIELD
 	for(uint d=0u; d<get_D(); d++) lbm_domain[d]->F.enqueue_write_to_device();
+	communicate_F();
 #endif // FORCE_FIELD
 #ifdef SURFACE
 	for(uint d=0u; d<get_D(); d++) lbm_domain[d]->phi.enqueue_write_to_device();
@@ -862,6 +865,7 @@ void LBM::initialize() { // write all data fields to device and call kernel_init
 #endif // TEMPERATURE
 #ifdef PARTICLES
 	for(uint d=0u; d<get_D(); d++) lbm_domain[d]->particles.enqueue_write_to_device();
+	communicate_particles();
 #endif // PARTICLES
 
 	for(uint d=0u; d<get_D(); d++) lbm_domain[d]->increment_time_step(); // the communicate calls at initialization need an odd time step
@@ -909,6 +913,7 @@ void LBM::do_time_step() { // call kernel_stream_collide to perform one LBM time
 #endif // TEMPERATURE
 #ifdef PARTICLES
 	for(uint d=0u; d<get_D(); d++) lbm_domain[d]->enqueue_integrate_particles(); // intgegrate particles forward in time and couple particles to fluid
+	communicate_particles(); // communicate_F() is not required in do_time_step()
 #endif // PARTICLES
 	if(get_D()==1u) for(uint d=0u; d<get_D(); d++) lbm_domain[d]->finish_queue(); // this additional domain synchronization barrier is only required in single-GPU, as communication calls already provide all necessary synchronization barriers in multi-GPU
 	for(uint d=0u; d<get_D(); d++) lbm_domain[d]->increment_time_step();
@@ -1037,7 +1042,7 @@ void LBM::voxelize_mesh_on_device(const Mesh* mesh, const uchar flag, const floa
 	if(get_D()==1u) {
 		lbm_domain[0]->voxelize_mesh_on_device(mesh, flag, rotation_center, linear_velocity, rotational_velocity); // if this crashes on Windows, create a TdrDelay 32-bit DWORD with decimal value 300 in Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers
 	} else {
-		parallel_for((ulong)get_D(), get_D(), [&](ulong d) {
+		parallel_for(get_D(), get_D(), [&](uint d) {
 			lbm_domain[d]->voxelize_mesh_on_device(mesh, flag, rotation_center, linear_velocity, rotational_velocity);
 		});
 	}
@@ -1282,6 +1287,10 @@ void LBM_Domain::allocate_transfer(Device& device) { // allocate all memory for 
 	kernel_transfer[enum_transfer_field::rho_u_flags     ][1] = Kernel(device, 0u, "transfer__insert_rho_u_flags"     , 0u, t, transfer_buffer_p, transfer_buffer_m, rho, u, flags);
 	kernel_transfer[enum_transfer_field::flags           ][0] = Kernel(device, 0u, "transfer_extract_flags"           , 0u, t, transfer_buffer_p, transfer_buffer_m, flags);
 	kernel_transfer[enum_transfer_field::flags           ][1] = Kernel(device, 0u, "transfer__insert_flags"           , 0u, t, transfer_buffer_p, transfer_buffer_m, flags);
+#ifdef FORCE_FIELD
+	kernel_transfer[enum_transfer_field::F               ][0] = Kernel(device, 0u, "transfer_extract_F"               , 0u, t, transfer_buffer_p, transfer_buffer_m, F);
+	kernel_transfer[enum_transfer_field::F               ][1] = Kernel(device, 0u, "transfer__insert_F"               , 0u, t, transfer_buffer_p, transfer_buffer_m, F);
+#endif // FORCE_FIELD
 #ifdef SURFACE
 	kernel_transfer[enum_transfer_field::phi_massex_flags][0] = Kernel(device, 0u, "transfer_extract_phi_massex_flags", 0u, t, transfer_buffer_p, transfer_buffer_m, phi, massex, flags);
 	kernel_transfer[enum_transfer_field::phi_massex_flags][1] = Kernel(device, 0u, "transfer__insert_phi_massex_flags", 0u, t, transfer_buffer_p, transfer_buffer_m, phi, massex, flags);
@@ -1349,6 +1358,11 @@ void LBM::communicate_rho_u_flags() {
 void LBM::communicate_flags() {
 	communicate_field(enum_transfer_field::flags, 1u);
 }
+#ifdef FORCE_FIELD
+void LBM::communicate_F() {
+	communicate_field(enum_transfer_field::F, 12u);
+}
+#endif // FORCE_FIELD
 #ifdef SURFACE
 void LBM::communicate_phi_massex_flags() {
 	communicate_field(enum_transfer_field::phi_massex_flags, 9u);
@@ -1362,3 +1376,29 @@ void LBM::communicate_T() {
 	communicate_field(enum_transfer_field::T, 4u);
 }
 #endif // TEMPERATURE
+#ifdef PARTICLES
+void LBM::communicate_particles() {
+	if(get_D()>1u) {
+		if(initialized) {
+			for(uint d=0u; d<get_D(); d++) lbm_domain[d]->particles.enqueue_read_from_device();
+			for(uint d=0u; d<get_D(); d++) lbm_domain[d]->finish_queue(); // domain synchronization barrier
+			for(ulong n=0ull; n<lbm_domain[0]->particles.length(); n++) { // parallel_for(lbm_domain[0]->particles.length(), [&](ulong n) {
+				for(uint d=1u; d<get_D(); d++) { // gather modified particle positions
+					const float lbm_domain_d___particles_x_n_ = lbm_domain[d]->particles.x[n];
+					if(as_uint(lbm_domain_d___particles_x_n_)!=0xFFFFFFFFu) { // particle was in domain d and has been modified
+						lbm_domain[0]->particles.x[n] = lbm_domain_d___particles_x_n_;
+						lbm_domain[0]->particles.y[n] = lbm_domain[d]->particles.y[n];
+						lbm_domain[0]->particles.z[n] = lbm_domain[d]->particles.z[n];
+						break; // particle can only be in one domain at a time, no need to check other domains once it has been found
+					}
+				}
+			} // });
+		}
+		for(uint d=0u; d<get_D(); d++) { // broadcast unified particle positions, using pointer of lbm_domain[0] instead of memory copy
+			float* lbm_domain_d_particles_data = lbm_domain[d]->particles.exchange_host_buffer(lbm_domain[0]->particles.data());
+			lbm_domain[d]->particles.enqueue_write_to_device();
+			lbm_domain[d]->particles.exchange_host_buffer(lbm_domain_d_particles_data);
+		}
+	}
+}
+#endif // PARTICLES
