@@ -20,7 +20,7 @@ void main_setup() {
     const float3 center = float3(128.0f, lbm.center().y, lbm.center().z);
     const float3x3 rotation = float3x3(float3(0, 0, 1), radians(-90.0f)); 
 
-    lbm.voxelize_stl(get_exe_path() + "../stl/car_step_model.stl", center, rotation, 0.4f * Nx, TYPE_S | TYPE_X);
+    lbm.voxelize_stl(get_exe_path() + "../stl/mirror_step_model.stl", center, rotation, 64.0f, TYPE_S | TYPE_X);
 
     const uint Nx_lbm = lbm.get_Nx(), Ny_lbm = lbm.get_Ny(), Nz_lbm = lbm.get_Nz();
     parallel_for(lbm.get_N(), [&](ulong n) {
