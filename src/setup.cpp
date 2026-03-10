@@ -16,15 +16,15 @@ void main_setup() {
     units.set_m_kg_s(lbm_x, lbm_u, lbm_rho, si_x, si_u, si_rho);
     const float lbm_nu = units.nu(si_nu);
 
-    const uint Nx = 356u;  
-    const uint Ny = 236u;  
-    const uint Nz = 128u;  
+    const uint Nx = 146u;  
+    const uint Ny = 128u;
+    const uint Nz = 88u;
     LBM lbm(Nx, Ny, Nz, lbm_nu);
 
-    const float3 center = float3(128.0f, lbm.center().y, lbm.center().z);
+    const float3 center = float3(38.0f, lbm.center().y + 5, lbm.center().z - 10);
     const float3x3 rotation = float3x3(float3(0, 0, 1), radians(-90.0f)); 
 
-    lbm.voxelize_stl(get_exe_path() + "stl/mirror_step_model.stl", center, rotation, 64.0f, TYPE_S | TYPE_X);
+    lbm.voxelize_stl(get_exe_path() + "../stl/mirror_step_100_09-03-2026_16-48-52.stl", center, rotation, 64.0f, TYPE_S | TYPE_X);
 
     const uint Nx_lbm = lbm.get_Nx(), Ny_lbm = lbm.get_Ny(), Nz_lbm = lbm.get_Nz();
     parallel_for(lbm.get_N(), [&](ulong n) {
@@ -41,10 +41,10 @@ void main_setup() {
             lbm.flags[n] = TYPE_E;
         }
         if (z == 0u && lbm.flags[n] != TYPE_S) {
-            lbm.flags[n] = TYPE_S;
+            lbm.flags[n] = TYPE_E;
         }
         if ((y == 0u || y == Ny_lbm - 1u) && lbm.flags[n] != TYPE_S) {
-            lbm.flags[n] = TYPE_S;
+            lbm.flags[n] = TYPE_E;
         }
         });
 
